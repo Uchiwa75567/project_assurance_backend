@@ -1,34 +1,143 @@
 package com.ma_sante_assurance.paiement.service;
 
+import com.ma_sante_assurance.carte.dto.CarteRequestDTO;
+import com.ma_sante_assurance.carte.service.CarteService;
+import com.ma_sante_assurance.client.entity.Client;
+import com.ma_sante_assurance.client.repository.ClientRepository;
 import com.ma_sante_assurance.common.audit.service.AuditService;
+import com.ma_sante_assurance.common.enums.CarteStatus;
 import com.ma_sante_assurance.common.enums.PaiementStatus;
+import com.ma_sante_assurance.common.enums.SouscriptionStatus;
 import com.ma_sante_assurance.common.util.IdGenerator;
+import com.ma_sante_assurance.pack.entity.Pack;
+import com.ma_sante_assurance.pack.repository.PackRepository;
+import com.ma_sante_assurance.paiement.dto.IPNRequest;
 import com.ma_sante_assurance.paiement.dto.PaiementRequestDTO;
 import com.ma_sante_assurance.paiement.dto.PaiementResponseDTO;
+import com.ma_sante_assurance.paiement.dto.PaydunyaInitRequest;
+import com.ma_sante_assurance.paiement.dto.PaydunyaInitResponse;
 import com.ma_sante_assurance.paiement.entity.Paiement;
 import com.ma_sante_assurance.paiement.repository.PaiementRepository;
+import com.ma_sante_assurance.paiement.service.PayDunyaPaymentService;
 import com.ma_sante_assurance.souscription.entity.Souscription;
 import com.ma_sante_assurance.souscription.repository.SouscriptionRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Service
 public class PaiementService {
 
     private final PaiementRepository paiementRepository;
     private final SouscriptionRepository souscriptionRepository;
     private final AuditService auditService;
+    private final PayDunyaPaymentService payDunyaService;
+    private final CarteService carteService;
+    private final ClientRepository clientRepository;
+    private final PackRepository packRepository;
 
     public PaiementService(PaiementRepository paiementRepository,
                            SouscriptionRepository souscriptionRepository,
-                           AuditService auditService) {
+                           AuditService auditService,
+                           PayDunyaPaymentService payDunyaService,
+                           CarteService carteService,
+                           ClientRepository clientRepository,
+                           PackRepository packRepository) {
         this.paiementRepository = paiementRepository;
         this.souscriptionRepository = souscriptionRepository;
         this.auditService = auditService;
+        this.payDunyaService = payDunyaService;
+        this.carteService = carteService;
+        this.clientRepository = clientRepository;
+        this.packRepository = packRepository;
+    }
+
+    @Transactional
+    public PaydunyaInitResponse initierPaiement(PaydunyaInitRequest request, String actorUserId) {
+        Client client = clientRepository.findById(request.clientId())
+                .orElseThrow(() -> new EntityNotFoundException("Client introuvable: " + request.clientId()));
+        Pack pack = packRepository.findById(request.packId())
+                .orElseThrow(() -> new EntityNotFoundException("Pack introuvable: " + request.packId()));
+
+        Souscription souscription = Souscription.builder()
+                .id(IdGenerator.uuid())
+                .client(client)
+                .pack(pack)
+                .statut(SouscriptionStatus.EN_ATTENTE)
+                .build();
+        souscription = souscriptionRepository.save(souscription);
+        auditService.log(actorUserId, "SOUSCRIPTION_CREATE_ATTENTE", "SOUSCRIPTION", souscription.getId(), "PayDunya init");
+
+        Paiement paiement = Paiement.builder()
+                .id(IdGenerator.uuid())
+                .souscription(souscription)
+                .montant(pack.getPrix())
+                .reference(souscription.getId())
+                .statut(PaiementStatus.EN_ATTENTE)
+                .provider("PAYDUNYA")
+                .build();
+        paiementRepository.save(paiement);
+
+        var paydunyaResponse = payDunyaService.createInvoice(request.clientId(), request.packId(), souscription.getId());
+
+        paiement.setPaymentUrl(paydunyaResponse.paymentUrl());
+        paiement.setTransactionId(paydunyaResponse.token());
+        paiementRepository.save(paiement);
+
+        auditService.log(actorUserId, "PAIEMENT_PAYDUNYA_INIT", "PAIEMENT", paiement.getId(), paydunyaResponse.paymentUrl());
+
+        return new PaydunyaInitResponse(
+                paydunyaResponse.paymentUrl(),
+                paydunyaResponse.token(),
+                souscription.getId()
+        );
+    }
+
+    @Transactional
+    public void handleIPN(IPNRequest request) {
+        log.info("IPN reçu: token={}, status={}, amount={}", request.token(), request.status(), request.amount());
+
+        Paiement paiement = paiementRepository.findByReference(request.token())
+                .orElseThrow(() -> new EntityNotFoundException("Paiement introuvable pour token: " + request.token()));
+
+        Souscription souscription = paiement.getSouscription();
+
+        if ("completed".equals(request.status())) {
+            var verification = payDunyaService.verifyPayment(request.token());
+            String verifyStatus = (String) verification.get("status");
+            if (!"completed".equals(verifyStatus)) {
+                log.warn("IPN OK mais verify KO: {}", verification);
+                return;
+            }
+
+            paiement.setStatut(PaiementStatus.VALIDE);
+            paiement.setProvider(request.provider());
+            paiement.setTransactionId(request.transactionId());
+            paiement.setDateValidation(Instant.now());
+            paiementRepository.save(paiement);
+
+            souscription.setStatut(SouscriptionStatus.ACTIVE);
+            souscription.setDateDebut(LocalDate.now());
+            souscription.setDateFin(LocalDate.now().plusMonths(1));
+            souscriptionRepository.save(souscription);
+
+            carteService.createOrUpdate(new CarteRequestDTO(souscription.getId(), null, null, null, null, CarteStatus.ACTIVATED));
+
+            auditService.log("system", "PAIEMENT_PAYDUNYA_SUCCESS", "PAIEMENT", paiement.getId(), request.token());
+            log.info("PayDunya succès complet: paiement={}, souscription={}, carte générée", paiement.getId(), souscription.getId());
+
+        } else {
+            paiement.setStatut(PaiementStatus.ECHEC);
+            paiementRepository.save(paiement);
+            auditService.log("system", "PAIEMENT_PAYDUNYA_FAILED", "PAIEMENT", paiement.getId(), request.status());
+            log.warn("PayDunya IPN échec: {}", request.status());
+        }
     }
 
     @Transactional

@@ -1,10 +1,14 @@
 package com.ma_sante_assurance.paiement.controller;
 
 import com.ma_sante_assurance.common.ApiResponse;
+import com.ma_sante_assurance.paiement.dto.IPNRequest;
 import com.ma_sante_assurance.paiement.dto.PaiementRequestDTO;
 import com.ma_sante_assurance.paiement.dto.PaiementResponseDTO;
+import com.ma_sante_assurance.paiement.dto.PaydunyaInitRequest;
+import com.ma_sante_assurance.paiement.dto.PaydunyaInitResponse;
 import com.ma_sante_assurance.paiement.service.PaiementService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/paiements")
 @Tag(name = "Paiements", description = "Gestion des paiements")
@@ -64,4 +69,24 @@ public class PaiementController {
         paiementService.delete(id);
         return ApiResponse.ok("Paiement supprime", null);
     }
+
+    @PostMapping("/initier")
+    @Operation(summary = "Initier paiement PayDunya", description = "Crée souscription + paiement + retourne URL PayDunya")
+    public ApiResponse<PaydunyaInitResponse> initier(
+            @Valid @RequestBody PaydunyaInitRequest request,
+            Authentication authentication
+    ) {
+        log.info("Init PayDunya: client={}, pack={}", request.clientId(), request.packId());
+        return ApiResponse.ok("Paiement initié - redirection PayDunya", 
+                paiementService.initierPaiement(request, authentication.getName()));
+    }
+
+    @PostMapping("/paydunya/ipn")
+    @Operation(summary = "IPN PayDunya", description = "Webhook notification paiement (HTTP 200 toujours)")
+    public void ipn(@RequestBody IPNRequest request) {
+        log.info("IPN PayDunya reçu: {}", request);
+        paiementService.handleIPN(request);
+        // Toujours 200 pour PayDunya (ne jamais reject webhook)
+    }
 }
+
