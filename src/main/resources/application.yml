@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ma_sante_assurance}?sslmode=disable&connectTimeout=${DB_CONNECT_TIMEOUT:10}&socketTimeout=${DB_SOCKET_TIMEOUT:30}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ma_sante_assurance}?sslmode=${DB_SSLMODE:disable}&connectTimeout=${DB_CONNECT_TIMEOUT:10}&socketTimeout=${DB_SOCKET_TIMEOUT:30}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -49,21 +49,21 @@ app:
     public-key: ${PAYDUNYA_PUBLIC_KEY}
     private-key: ${PAYDUNYA_PRIVATE_KEY}
     token: ${PAYDUNYA_TOKEN}
-    api-url: https://api.paydunya.com
+    api-url: ${PAYDUNYA_API_URL:https://api.paydunya.com}
     ipn-url: ${PAYDUNYA_IPN_URL}
-    mode: test
+    mode: ${PAYDUNYA_MODE:test}
   mailjet:
     api-key: ${MAILJET_API_KEY}
     api-secret: ${MAILJET_API_SECRET}
     sender-email: ${MAILJET_SENDER_EMAIL}
-    sender-name: M&A Sante Assurance
-    api-url: https://api.mailjet.com/v3.1
+    sender-name: ${MAILJET_SENDER_NAME:M&A Sante Assurance}
+    api-url: ${MAILJET_API_URL:https://api.mailjet.com/v3.1}
   twilio:
     account-sid: ${TWILIO_ACCOUNT_SID}
     auth-token: ${TWILIO_AUTH_TOKEN}
     from-phone: ${TWILIO_FROM_PHONE}
   cloudinary:
-    cloud-name: ${CLOUDINARY_CLOUD_NAME:${CLOUDINARY_CLOUD_NAME}}
-    api-key: ${CLOUDINARY_API_KEY:${CLOUDINARY_API_KEY}}
-    api-secret: ${CLOUDINARY_API_SECRET:${CLOUDINARY_API_SECRET}}
+    cloud-name: ${CLOUDINARY_CLOUD_NAME}
+    api-key: ${CLOUDINARY_API_KEY}
+    api-secret: ${CLOUDINARY_API_SECRET}
     folder: ${CLOUDINARY_UPLOAD_FOLDER:ma_sante_assurance}

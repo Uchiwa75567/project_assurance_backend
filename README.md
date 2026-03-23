@@ -218,6 +218,8 @@ Important settings:
 - JWT secret
 - Mailjet keys
 - Twilio keys
+
+For local development, `run.sh` loads `back_end/.env` automatically before starting Spring Boot.
 - PayDunya keys
 - Cloudinary keys
 
