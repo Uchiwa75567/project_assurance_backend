@@ -35,12 +35,16 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Configuration
 public class DataInitializer {
+
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     @Bean
     CommandLineRunner seedAll(
@@ -59,62 +63,65 @@ public class DataInitializer {
             PartenaireService partenaireService
     ) {
         return args -> {
-            ensureTestUser(authService, userRepository, passwordEncoder, "Admin M&A", "admin@masante.sn", "admin123", UserRole.ADMIN);
-            ensureTestUser(authService, userRepository, passwordEncoder, "Agent Ibrahima", "agent1@masante.sn", "agent123", UserRole.AGENT);
-            ensureTestUser(authService, userRepository, passwordEncoder, "Client Test", "client@masante.sn", "client123", UserRole.CLIENT);
+            try {
+                ensureTestUser(authService, userRepository, passwordEncoder, "Admin M&A", "admijn@masante.sn", "admin123", UserRole.ADMIN);
+                ensureTestUser(authService, userRepository, passwordEncoder, "Client Test", "client@masante.sn", "client123", UserRole.CLIENT);
 
-            safe(() -> agentService.createOrUpdateAgent(new AgentRequestDTO("1", "MA-8218992", "Ibrahima", "Diop", "783783434", "Active")));
-            safe(() -> agentService.createOrUpdateAgent(new AgentRequestDTO("2", "MA-8218993", "Aissatou", "Ndiaye", "781234567", "Active")));
-            safe(() -> agentService.createOrUpdateAgent(new AgentRequestDTO("3", "MA-8218994", "Mamadou", "Fall", "701234567", "Active")));
-            safe(() -> agentService.createOrUpdateAgent(new AgentRequestDTO("4", "MA-8218995", "Khady", "Ba", "761234567", "Inactif")));
+                safe(() -> agentService.createOrUpdateAgent(new AgentRequestDTO("1", "MA-8218992", "Ibrahima", "Diop", "783783434", "Active")));
+                safe(() -> agentService.createOrUpdateAgent(new AgentRequestDTO("2", "MA-8218993", "Aissatou", "Ndiaye", "781234567", "Active")));
+                safe(() -> agentService.createOrUpdateAgent(new AgentRequestDTO("3", "MA-8218994", "Mamadou", "Fall", "701234567", "Active")));
+                safe(() -> agentService.createOrUpdateAgent(new AgentRequestDTO("4", "MA-8218995", "Khady", "Ba", "761234567", "Inactif")));
 
-            PackResponseDTO noppale = findOrCreatePack(
-                    packRepository,
-                    packService,
-                    new PackRequestDTO("PACK-NOPPALE", "Pack Noppale Sante", "Couverture essentielle", new BigDecimal("3900"), 1, true)
-            );
-            PackResponseDTO kerYaram = findOrCreatePack(
-                    packRepository,
-                    packService,
-                    new PackRequestDTO("PACK-KER-YARAM", "Pack Ker Yaram", "Couverture familiale", new BigDecimal("5900"), 1, true)
-            );
+                PackResponseDTO noppale = findOrCreatePack(
+                        packRepository,
+                        packService,
+                        new PackRequestDTO("PACK-NOPPALE", "Pack Noppale Sante", "Couverture essentielle", new BigDecimal("3900"), 1, true)
+                );
+                PackResponseDTO kerYaram = findOrCreatePack(
+                        packRepository,
+                        packService,
+                        new PackRequestDTO("PACK-KER-YARAM", "Pack Ker Yaram", "Couverture familiale", new BigDecimal("5900"), 1, true)
+                );
 
-            var g1 = safeReturn(() -> garantieService.create(new GarantieRequestDTO("Consultations generales", "Soins de base", new BigDecimal("50000"))));
-            var g2 = safeReturn(() -> garantieService.create(new GarantieRequestDTO("Medicaments de base", "Traitements courants", new BigDecimal("30000"))));
-            var g3 = safeReturn(() -> garantieService.create(new GarantieRequestDTO("Hospitalisation", "Prise en charge familiale", new BigDecimal("150000"))));
+                var g1 = safeReturn(() -> garantieService.create(new GarantieRequestDTO("Consultations generales", "Soins de base", new BigDecimal("50000"))));
+                var g2 = safeReturn(() -> garantieService.create(new GarantieRequestDTO("Medicaments de base", "Traitements courants", new BigDecimal("30000"))));
+                var g3 = safeReturn(() -> garantieService.create(new GarantieRequestDTO("Hospitalisation", "Prise en charge familiale", new BigDecimal("150000"))));
 
-            if (g1 != null) safe(() -> packGarantieService.create(new PackGarantieRequestDTO(noppale.id(), g1.id(), new BigDecimal("50000"))));
-            if (g2 != null) safe(() -> packGarantieService.create(new PackGarantieRequestDTO(noppale.id(), g2.id(), new BigDecimal("30000"))));
-            if (g3 != null) safe(() -> packGarantieService.create(new PackGarantieRequestDTO(kerYaram.id(), g3.id(), new BigDecimal("150000"))));
+                if (g1 != null) safe(() -> packGarantieService.create(new PackGarantieRequestDTO(noppale.id(), g1.id(), new BigDecimal("50000"))));
+                if (g2 != null) safe(() -> packGarantieService.create(new PackGarantieRequestDTO(noppale.id(), g2.id(), new BigDecimal("30000"))));
+                if (g3 != null) safe(() -> packGarantieService.create(new PackGarantieRequestDTO(kerYaram.id(), g3.id(), new BigDecimal("150000"))));
 
-            ClientResponseDTO client1 = clientService.create(new ClientRequestDTO.Create(
-                    null, "Abdoulaye", "Diallo", LocalDate.of(1992, 2, 24), "771234567", "Dakar", "CNI1234",
-                    null, "Pack Noppale Sante", GeneralStatus.ACTIVE, "1"
-            ));
+                ClientResponseDTO client1 = clientService.create(new ClientRequestDTO.Create(
+                        null, "Abdoulaye", "Diallo", LocalDate.of(1992, 2, 24), "771234567", "Dakar", "CNI1234",
+                        null, "Pack Noppale Sante", GeneralStatus.ACTIVE, "1"
+                ));
 
-            SouscriptionResponseDTO s1 = souscriptionService.create(new SouscriptionRequestDTO.Create(
-                    client1.id(), "1", noppale.id(), LocalDate.now(), LocalDate.now().plusMonths(1), LocalDate.now().plusMonths(1), null
-            ), "system");
+                SouscriptionResponseDTO s1 = souscriptionService.create(new SouscriptionRequestDTO.Create(
+                        client1.id(), "1", noppale.id(), LocalDate.now(), LocalDate.now().plusMonths(1), LocalDate.now().plusMonths(1), null
+                ), "system");
 
-            safe(() -> carteService.createOrUpdate(new CarteRequestDTO(s1.id(), null, LocalDate.now(), LocalDate.now().plusYears(1), null, null)));
+                safe(() -> carteService.createOrUpdate(new CarteRequestDTO(s1.id(), null, LocalDate.now(), LocalDate.now().plusYears(1), null, null)));
 
-            PaiementResponseDTO p1 = paiementService.create(new PaiementRequestDTO.Create(
-                    s1.id(), new BigDecimal("3900"), "PAY-001", "mobile-money", "TX-001", null, LocalDate.now(), LocalDate.now().plusMonths(1)
-            ), "system");
-            safe(() -> paiementService.update(p1.id(), new PaiementRequestDTO.Update(PaiementStatus.VALIDE, null, null, null, null, null, null), "system"));
+                PaiementResponseDTO p1 = paiementService.create(new PaiementRequestDTO.Create(
+                        s1.id(), new BigDecimal("3900"), "PAY-001", "mobile-money", "TX-001", null, LocalDate.now(), LocalDate.now().plusMonths(1)
+                ), "system");
+                safe(() -> paiementService.update(p1.id(), new PaiementRequestDTO.Update(PaiementStatus.VALIDE, null, null, null, null, null, null), "system"));
 
-            safe(() -> partenaireService.create(new PartenaireRequestDTO(
-                    null, "Hopital Principal de Dakar", "hopital", "Avenue Nelson Mandela, Dakar",
-                    "+221 33 839 50 50", 14.6708, -17.4352, true
-            )));
-            safe(() -> partenaireService.create(new PartenaireRequestDTO(
-                    null, "CHN Fann", "hopital", "Fann Residence, Dakar",
-                    "+221 33 869 18 18", 14.6924, -17.4552, true
-            )));
-            safe(() -> partenaireService.create(new PartenaireRequestDTO(
-                    null, "Hopital Aristide Le Dantec", "hopital", "Avenue Pasteur, Dakar",
-                    "+221 33 889 38 00", 14.6732, -17.4385, true
-            )));
+                safe(() -> partenaireService.create(new PartenaireRequestDTO(
+                        null, "Hopital Principal de Dakar", "hopital", "Avenue Nelson Mandela, Dakar",
+                        "+221 33 839 50 50", 14.6708, -17.4352, true
+                )));
+                safe(() -> partenaireService.create(new PartenaireRequestDTO(
+                        null, "CHN Fann", "hopital", "Fann Residence, Dakar",
+                        "+221 33 869 18 18", 14.6924, -17.4552, true
+                )));
+                safe(() -> partenaireService.create(new PartenaireRequestDTO(
+                        null, "Hopital Aristide Le Dantec", "hopital", "Avenue Pasteur, Dakar",
+                        "+221 33 889 38 00", 14.6732, -17.4385, true
+                )));
+            } catch (Exception e) {
+                log.warn("Data initializer skipped because the current database schema/data is not fully compatible yet: {}", e.getMessage());
+            }
         };
     }
 

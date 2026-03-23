@@ -7,7 +7,7 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class PayDunyaConfig {
 
-    @Bean
+@Bean("paydunyaRestTemplate")
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }

@@ -22,6 +22,17 @@ public class AuthRequestDTO {
     ) {
     }
 
+    public record VerifyOtpRequest(
+            @Email(message = ValidationMessages.EMAIL_INVALID) String email,
+            @NotBlank String code
+    ) {
+    }
+
+    public record ResendOtpRequest(
+            @Email(message = ValidationMessages.EMAIL_INVALID) String email
+    ) {
+    }
+
     public record LoginRequest(
             @NotBlank(message = ValidationMessages.IDENTIFIER_REQUIRED) String identifier,
             @NotBlank(message = ValidationMessages.PASSWORD_REQUIRED) String password

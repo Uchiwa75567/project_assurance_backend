@@ -10,10 +10,18 @@ public class ConsoleNotificationService implements NotificationService {
     private static final Logger log = LoggerFactory.getLogger(ConsoleNotificationService.class);
 
     @Override
-    public void sendNumeroAssurance(String fullName, String numeroAssurance, String email, String telephone) {
+    public void sendNumeroAssurance(String fullName, String code, String email, String telephone) {
         String destination = email != null && !email.isBlank()
                 ? "email=" + email
                 : (telephone != null && !telephone.isBlank() ? "telephone=" + telephone : "destinataire inconnu");
-        log.info("[Notification] Numero assurance pour {} -> {} ({})", fullName, numeroAssurance, destination);
+        log.info("[Notification] OTP pour {} -> {} ({})", fullName, code, destination);
+    }
+
+    @Override
+    public void sendCarteAssurance(String fullName, String numeroAssurance, String email, String telephone) {
+        String destination = email != null && !email.isBlank()
+                ? "email=" + email
+                : (telephone != null && !telephone.isBlank() ? "telephone=" + telephone : "destinataire inconnu");
+        log.info("[Notification] Carte pour {} -> {} ({})", fullName, numeroAssurance, destination);
     }
 }

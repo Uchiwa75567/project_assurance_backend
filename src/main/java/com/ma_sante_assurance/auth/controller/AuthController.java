@@ -98,6 +98,20 @@ public class AuthController {
         return ApiResponse.ok("Deconnexion reussie", null);
     }
 
+    @PostMapping("/verify-otp")
+    @Operation(summary = "Verifier OTP", description = "Valide le code OTP envoye par email et SMS.")
+    public ApiResponse<Void> verifyOtp(@Valid @RequestBody AuthRequestDTO.VerifyOtpRequest request) {
+        authService.verifyOtp(request);
+        return ApiResponse.ok("Code OTP verifie", null);
+    }
+
+    @PostMapping("/resend-otp")
+    @Operation(summary = "Renvoyer OTP", description = "Regenerer et renvoyer le code OTP au client.")
+    public ApiResponse<Void> resendOtp(@Valid @RequestBody AuthRequestDTO.ResendOtpRequest request) {
+        authService.resendOtp(request);
+        return ApiResponse.ok("Code OTP renvoye", null);
+    }
+
     private void attachCookies(HttpServletResponse response,
                                String accessToken,
                                String refreshToken,

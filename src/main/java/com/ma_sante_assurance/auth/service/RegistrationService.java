@@ -6,12 +6,14 @@ import com.ma_sante_assurance.client.dto.ClientRequestDTO;
 import com.ma_sante_assurance.client.dto.ClientResponseDTO;
 import com.ma_sante_assurance.client.service.ClientService;
 import com.ma_sante_assurance.common.enums.UserRole;
+import com.ma_sante_assurance.common.enums.OtpType;
 import com.ma_sante_assurance.common.messages.AuthMessages;
 import com.ma_sante_assurance.common.util.EmailNormalizer;
 import com.ma_sante_assurance.common.util.IdGenerator;
 import com.ma_sante_assurance.common.validation.PhoneNumberValidator;
 import com.ma_sante_assurance.common.validation.ValidationMessages;
 import com.ma_sante_assurance.notification.NotificationService;
+import com.ma_sante_assurance.otp.service.OtpService;
 import com.ma_sante_assurance.user.entity.User;
 import com.ma_sante_assurance.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -27,17 +29,20 @@ public class RegistrationService {
     private final AgentService agentService;
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
+    private final OtpService otpService;
 
     public RegistrationService(UserRepository userRepository,
                                ClientService clientService,
                                AgentService agentService,
                                PasswordEncoder passwordEncoder,
-                               NotificationService notificationService) {
+                               NotificationService notificationService,
+                               OtpService otpService) {
         this.userRepository = userRepository;
         this.clientService = clientService;
         this.agentService = agentService;
         this.passwordEncoder = passwordEncoder;
         this.notificationService = notificationService;
+        this.otpService = otpService;
     }
 
     @Transactional
@@ -50,11 +55,13 @@ public class RegistrationService {
         }
 
         if (role == UserRole.CLIENT) {
-            if (normalizedEmail != null) {
-                userRepository.findByEmail(normalizedEmail).ifPresent(u -> {
-                    throw new IllegalArgumentException(AuthMessages.EMAIL_ALREADY_USED);
-                });
+            if (normalizedEmail == null) {
+                throw new IllegalArgumentException(ValidationMessages.EMAIL_REQUIRED);
             }
+
+            userRepository.findByEmail(normalizedEmail).ifPresent(u -> {
+                throw new IllegalArgumentException(AuthMessages.EMAIL_ALREADY_USED);
+            });
 
             User user = User.builder()
                     .id(IdGenerator.uuid())
@@ -74,7 +81,8 @@ public class RegistrationService {
                     request.numeroCni(),
                     request.photoUrl()
             ));
-            notificationService.sendNumeroAssurance(user.getFullName(), client.numeroAssurance(), normalizedEmail, request.telephone());
+            String otpCode = otpService.generateOtp(user.getId(), OtpType.EMAIL);
+            notificationService.sendNumeroAssurance(user.getFullName(), otpCode, normalizedEmail, request.telephone());
             return new RegistrationResult(user, client);
         }
 

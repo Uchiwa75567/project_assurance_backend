@@ -8,6 +8,7 @@ import com.ma_sante_assurance.pack.entity.Pack;
 import com.ma_sante_assurance.pack.repository.PackRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -22,7 +23,6 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PayDunyaPaymentService {
 
     private final RestTemplate restTemplate;
@@ -30,7 +30,7 @@ public class PayDunyaPaymentService {
     private final ClientRepository clientRepository;
     private final PackRepository packRepository;
 
-@Value("${app.paydunya.public-key}")
+    @Value("${app.paydunya.public-key}")
     private String publicKey;
 
     @Value("${app.paydunya.private-key}")
@@ -45,6 +45,16 @@ public class PayDunyaPaymentService {
     @Value("${app.paydunya.ipn-url}")
     private String ipnUrl;
 
+    public PayDunyaPaymentService(@Qualifier("paydunyaRestTemplate") RestTemplate restTemplate,
+                                  ObjectMapper objectMapper,
+                                  ClientRepository clientRepository,
+                                  PackRepository packRepository) {
+        this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
+        this.clientRepository = clientRepository;
+        this.packRepository = packRepository;
+    }
+
     public record CreateInvoiceResponse(
             String token,
             String paymentUrl,
@@ -52,9 +62,6 @@ public class PayDunyaPaymentService {
             String message
     ) {}
 
-    /**
-     * Créer facture PayDunya pour souscription
-     */
     public CreateInvoiceResponse createInvoice(String clientId, String packId, String souscriptionId) {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Client introuvable: " + clientId));
@@ -107,9 +114,6 @@ public class PayDunyaPaymentService {
         }
     }
 
-    /**
-     * Vérifier statut paiement (double-check IPN)
-     */
     public Map verifyPayment(String token) {
         String url = UriComponentsBuilder.fromHttpUrl(apiUrl + "/inv/api/pay/v1/invoicing/invoices/" + token)
                 .queryParam("public_key", publicKey)

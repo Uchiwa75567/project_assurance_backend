@@ -43,7 +43,8 @@ public class SecurityConfig {
                             "/api/auth/login",
                             "/api/auth/register",
                             "/api/auth/refresh",
-                            "/api/auth/logout"
+                            "/api/auth/logout",
+                            "/api/uploads/photo"
                     )
             )
             .cors(Customizer.withDefaults())
@@ -51,6 +52,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                         "/api/auth/**",
+                        "/api/uploads/**",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",

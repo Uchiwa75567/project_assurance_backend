@@ -53,7 +53,7 @@ public class Client {
     @Column
     private String numeroCni;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String photoUrl;
 
     @Column
