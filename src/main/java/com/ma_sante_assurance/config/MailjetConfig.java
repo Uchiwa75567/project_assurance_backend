@@ -8,10 +8,10 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class MailjetConfig {
 
-    @Value("${app.mailjet.api-key}")
+    @Value("${app.mailjet.api-key:}")
     private String apiKey;
 
-    @Value("${app.mailjet.api-secret}")
+    @Value("${app.mailjet.api-secret:}")
     private String apiSecret;
 
     @Value("${app.mailjet.sender-email:no-reply@ma-sante-assurance.sn}")

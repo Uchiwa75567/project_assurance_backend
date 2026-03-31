@@ -8,18 +8,20 @@ import jakarta.annotation.PostConstruct;
 @Configuration
 public class TwilioConfig {
 
-    @Value("${app.twilio.account-sid}")
+    @Value("${app.twilio.account-sid:}")
     private String accountSid;
 
-    @Value("${app.twilio.auth-token}")
+    @Value("${app.twilio.auth-token:}")
     private String authToken;
 
-    @Value("${app.twilio.from-phone}")
+    @Value("${app.twilio.from-phone:}")
     private String fromPhone;
 
     @PostConstruct
     public void init() {
-        Twilio.init(accountSid, authToken);
+        if (accountSid != null && !accountSid.isBlank() && authToken != null && !authToken.isBlank()) {
+            Twilio.init(accountSid, authToken);
+        }
     }
 
     public String getAccountSid() {

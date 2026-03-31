@@ -77,7 +77,17 @@ BEGIN
             UPDATE cartes SET date_expiration = validite WHERE date_expiration IS NULL;
             UPDATE cartes SET date_emission = CURRENT_DATE WHERE date_emission IS NULL;
         END IF;
-        ALTER TABLE cartes ALTER COLUMN souscription_id SET NOT NULL;
+
+        -- Keep existing databases deployable:
+        -- older rows may exist without a linked souscription, so only enforce
+        -- the NOT NULL constraint when the table is already clean.
+        IF NOT EXISTS (
+            SELECT 1
+            FROM cartes
+            WHERE souscription_id IS NULL
+        ) THEN
+            ALTER TABLE cartes ALTER COLUMN souscription_id SET NOT NULL;
+        END IF;
     END IF;
 END $$;
 

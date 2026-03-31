@@ -56,6 +56,14 @@ public class MailjetEmailService implements EmailService {
 
     private void sendEmail(String recipientEmail, String subject, String htmlContent, String textContent) {
         try {
+            if (mailjetConfig.getApiKey() == null || mailjetConfig.getApiKey().isBlank()
+                    || mailjetConfig.getApiSecret() == null || mailjetConfig.getApiSecret().isBlank()
+                    || mailjetConfig.getSenderEmail() == null || mailjetConfig.getSenderEmail().isBlank()) {
+                throw new IllegalStateException(
+                        "Mailjet n'est pas configure. Verifie MAILJET_API_KEY, MAILJET_API_SECRET et MAILJET_SENDER_EMAIL."
+                );
+            }
+
             HttpHeaders headers = new HttpHeaders();
             headers.setBasicAuth(mailjetConfig.getApiKey(), mailjetConfig.getApiSecret());
             headers.setContentType(MediaType.APPLICATION_JSON);

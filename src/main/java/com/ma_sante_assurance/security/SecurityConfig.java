@@ -17,6 +17,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
+import org.springframework.beans.factory.annotation.Value;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,16 +28,28 @@ import java.util.function.Supplier;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final boolean secureCookies;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          @Value("${app.security.secure-cookies:false}") boolean secureCookies) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.secureCookies = secureCookies;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfTokenRepository.setCookiePath("/");
+        csrfTokenRepository.setSecure(secureCookies);
+        csrfTokenRepository.setCookieCustomizer(cookie -> {
+            cookie.path("/");
+            cookie.secure(secureCookies);
+            cookie.sameSite(secureCookies ? "None" : "Lax");
+        });
+
         http
             .csrf(csrf -> csrf
-                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .csrfTokenRepository(csrfTokenRepository)
                     .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                     .ignoringRequestMatchers(
                             "/ws/**",
@@ -53,6 +66,7 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/api/auth/**",
                         "/api/uploads/**",
+                        "/health",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",

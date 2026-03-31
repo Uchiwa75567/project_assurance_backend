@@ -17,9 +17,17 @@ public class TwilioSmsService implements SmsService {
     @Override
     public void sendOtp(String phone, String code) {
         try {
+            if (twilioConfig.getAccountSid() == null || twilioConfig.getAccountSid().isBlank()
+                    || twilioConfig.getAuthToken() == null || twilioConfig.getAuthToken().isBlank()
+                    || twilioConfig.getFromPhone() == null || twilioConfig.getFromPhone().isBlank()) {
+                throw new IllegalStateException(
+                        "Twilio n'est pas configure. Verifie TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN et TWILIO_FROM_PHONE."
+                );
+            }
+
             Message.creator(
-                new PhoneNumber(phone),
-                new PhoneNumber(twilioConfig.getFromPhone()),
+                new PhoneNumber(normalizePhone(phone)),
+                new PhoneNumber(normalizePhone(twilioConfig.getFromPhone())),
                 "Votre code OTP M&A Sante Assurance : " + code + " (valable 5 min)"
             ).create();
 
@@ -33,9 +41,17 @@ public class TwilioSmsService implements SmsService {
     @Override
     public void sendCardNumber(String phone, String fullName, String numeroAssurance) {
         try {
+            if (twilioConfig.getAccountSid() == null || twilioConfig.getAccountSid().isBlank()
+                    || twilioConfig.getAuthToken() == null || twilioConfig.getAuthToken().isBlank()
+                    || twilioConfig.getFromPhone() == null || twilioConfig.getFromPhone().isBlank()) {
+                throw new IllegalStateException(
+                        "Twilio n'est pas configure. Verifie TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN et TWILIO_FROM_PHONE."
+                );
+            }
+
             Message.creator(
-                new PhoneNumber(phone),
-                new PhoneNumber(twilioConfig.getFromPhone()),
+                new PhoneNumber(normalizePhone(phone)),
+                new PhoneNumber(normalizePhone(twilioConfig.getFromPhone())),
                 "Bonjour " + fullName + ", votre numero de carte d'assurance est : " + numeroAssurance
             ).create();
 
@@ -44,5 +60,12 @@ public class TwilioSmsService implements SmsService {
             log.error("Erreur envoi numéro de carte SMS à {}: {}", phone, e.getMessage());
             throw new RuntimeException("Échec envoi numéro de carte SMS", e);
         }
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null) {
+            return null;
+        }
+        return phone.trim().replace(" ", "").replace("-", "");
     }
 }

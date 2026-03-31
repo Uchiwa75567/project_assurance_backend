@@ -121,7 +121,7 @@ public class AuthController {
                 .secure(secureCookies)
                 .path("/")
                 .maxAge(session.accessTokenExpiresIn())
-                .sameSite("Lax")
+                .sameSite(sameSiteForAuthCookie())
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from(REFRESH_COOKIE, refreshToken)
@@ -129,7 +129,7 @@ public class AuthController {
                 .secure(secureCookies)
                 .path("/")
                 .maxAge(session.refreshTokenExpiresIn())
-                .sameSite("Strict")
+                .sameSite(sameSiteForAuthCookie())
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
@@ -142,15 +142,19 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(secureCookies)
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite(sameSiteForAuthCookie())
                 .build().toString());
         response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie.from(REFRESH_COOKIE, "")
                 .path("/")
                 .httpOnly(true)
                 .secure(secureCookies)
                 .maxAge(0)
-                .sameSite("Strict")
+                .sameSite(sameSiteForAuthCookie())
                 .build().toString());
+    }
+
+    private String sameSiteForAuthCookie() {
+        return secureCookies ? "None" : "Lax";
     }
 
     private String extractAccessToken(HttpServletRequest request, String authorizationHeader) {
