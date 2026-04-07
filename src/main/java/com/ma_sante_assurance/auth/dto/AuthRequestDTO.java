@@ -4,6 +4,7 @@ import com.ma_sante_assurance.common.enums.UserRole;
 import com.ma_sante_assurance.common.validation.ValidationMessages;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ public class AuthRequestDTO {
     public record RegisterRequest(
             @NotBlank String fullName,
             @Email(message = ValidationMessages.EMAIL_INVALID) String email,
+            @PastOrPresent(message = ValidationMessages.DATE_INVALID_OR_FUTURE)
             LocalDate dateNaissance,
             @Pattern(regexp = "[+0-9][0-9\\s-]{6,20}", message = ValidationMessages.PHONE_INVALID) String telephone,
             String numeroCni,

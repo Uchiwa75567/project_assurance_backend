@@ -15,7 +15,7 @@ public class RealNotificationService implements NotificationService {
     private final EmailService emailService;
     private final SmsService smsService;
 
-    public RealNotificationService(@Qualifier("mailjetEmail") EmailService emailService, SmsService smsService) {
+    public RealNotificationService(@Qualifier("gmailEmail") EmailService emailService, SmsService smsService) {
         this.emailService = emailService;
         this.smsService = smsService;
     }
@@ -24,7 +24,6 @@ public class RealNotificationService implements NotificationService {
     public void sendNumeroAssurance(String fullName, String code, String email, String telephone) {
         boolean emailSent = false;
         boolean smsSent = false;
-        RuntimeException lastError = null;
 
         // Email
         if (email != null && !email.isBlank()) {
@@ -34,10 +33,9 @@ public class RealNotificationService implements NotificationService {
                 emailSent = true;
             } catch (Exception e) {
                 log.error("❌ Erreur email à {} : {}", email, e.getMessage());
-                lastError = new RuntimeException("Échec envoi email OTP", e);
             }
         }
-        
+
         // SMS
         if (telephone != null && !telephone.isBlank()) {
             try {
@@ -46,12 +44,11 @@ public class RealNotificationService implements NotificationService {
                 smsSent = true;
             } catch (Exception e) {
                 log.error("❌ Erreur SMS à {} : {}", telephone, e.getMessage());
-                lastError = new RuntimeException("Échec envoi SMS OTP", e);
             }
         }
 
-        if (!emailSent && !smsSent && lastError != null) {
-            throw lastError;
+        if (!emailSent && !smsSent) {
+            log.warn("Aucune notification OTP n'a pu etre envoyee pour {}", fullName);
         }
     }
 
@@ -59,7 +56,6 @@ public class RealNotificationService implements NotificationService {
     public void sendCarteAssurance(String fullName, String numeroAssurance, String email, String telephone) {
         boolean emailSent = false;
         boolean smsSent = false;
-        RuntimeException lastError = null;
 
         if (email != null && !email.isBlank()) {
             try {
@@ -68,7 +64,6 @@ public class RealNotificationService implements NotificationService {
                 emailSent = true;
             } catch (Exception e) {
                 log.error("❌ Erreur email carte à {} : {}", email, e.getMessage());
-                lastError = new RuntimeException("Échec envoi email carte", e);
             }
         }
 
@@ -79,12 +74,11 @@ public class RealNotificationService implements NotificationService {
                 smsSent = true;
             } catch (Exception e) {
                 log.error("❌ Erreur SMS carte à {} : {}", telephone, e.getMessage());
-                lastError = new RuntimeException("Échec envoi SMS carte", e);
             }
         }
 
-        if (!emailSent && !smsSent && lastError != null) {
-            throw lastError;
+        if (!emailSent && !smsSent) {
+            log.warn("Aucune notification carte n'a pu etre envoyee pour {}", fullName);
         }
     }
 }

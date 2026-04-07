@@ -1,6 +1,7 @@
 package com.ma_sante_assurance.notification;
 
 import com.ma_sante_assurance.config.TwilioConfig;
+import com.twilio.exception.ApiConnectionException;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import lombok.RequiredArgsConstructor;
@@ -25,13 +26,13 @@ public class TwilioSmsService implements SmsService {
                 );
             }
 
-            Message.creator(
-                new PhoneNumber(normalizePhone(phone)),
-                new PhoneNumber(normalizePhone(twilioConfig.getFromPhone())),
-                "Votre code OTP M&A Sante Assurance : " + code + " (valable 5 min)"
-            ).create();
+            sendWithRetry(
+                    normalizePhone(phone),
+                    normalizePhone(twilioConfig.getFromPhone()),
+                    "Votre code OTP M&A Sante Assurance : " + code + " (valable 5 min)"
+            );
 
-            log.info("OTP SMS envoyé à {}", phone);
+            log.info("OTP SMS envoyé à {} (normalisé: {})", phone, normalizePhone(phone));
         } catch (Exception e) {
             log.error("Erreur envoi SMS à {}: {}", phone, e.getMessage());
             throw new RuntimeException("Échec envoi SMS", e);
@@ -49,16 +50,49 @@ public class TwilioSmsService implements SmsService {
                 );
             }
 
-            Message.creator(
-                new PhoneNumber(normalizePhone(phone)),
-                new PhoneNumber(normalizePhone(twilioConfig.getFromPhone())),
-                "Bonjour " + fullName + ", votre numero de carte d'assurance est : " + numeroAssurance
-            ).create();
+            String normalizedPhone = normalizePhone(phone);
+            sendWithRetry(
+                    normalizedPhone,
+                    normalizePhone(twilioConfig.getFromPhone()),
+                    "Bonjour " + fullName + ", votre numero de carte d'assurance est : " + numeroAssurance
+            );
 
-            log.info("Numéro de carte SMS envoyé à {}", phone);
+            log.info("Numéro de carte SMS envoyé à {} (normalisé: {})", phone, normalizedPhone);
         } catch (Exception e) {
             log.error("Erreur envoi numéro de carte SMS à {}: {}", phone, e.getMessage());
             throw new RuntimeException("Échec envoi numéro de carte SMS", e);
+        }
+    }
+
+    private void sendWithRetry(String toPhone, String fromPhone, String body) {
+        int attempts = 0;
+        RuntimeException lastError = null;
+
+        while (attempts < 3) {
+            attempts++;
+            try {
+                Message.creator(
+                        new PhoneNumber(toPhone),
+                        new PhoneNumber(fromPhone),
+                        body
+                ).create();
+                return;
+            } catch (ApiConnectionException e) {
+                lastError = e;
+                log.warn("Tentative SMS Twilio {} echouee pour {}: {}", attempts, toPhone, e.getMessage());
+                if (attempts < 3) {
+                    try {
+                        Thread.sleep(1000L * attempts);
+                    } catch (InterruptedException interruptedException) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Échec envoi SMS", interruptedException);
+                    }
+                }
+            }
+        }
+
+        if (lastError != null) {
+            throw lastError;
         }
     }
 
@@ -66,6 +100,20 @@ public class TwilioSmsService implements SmsService {
         if (phone == null) {
             return null;
         }
-        return phone.trim().replace(" ", "").replace("-", "");
+
+        String normalized = phone.trim().replace(" ", "").replace("-", "");
+
+        if (normalized.startsWith("00")) {
+            normalized = "+" + normalized.substring(2);
+        }
+
+        if (!normalized.startsWith("+")) {
+            // Default to Senegal international format for local numbers like 771234567.
+            if (normalized.matches("\\d{9}")) {
+                normalized = "+221" + normalized;
+            }
+        }
+
+        return normalized;
     }
 }

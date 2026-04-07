@@ -14,4 +14,5 @@ public final class ValidationMessages {
     public static final String CURRENCY_INVALID = "Devise invalide";
     public static final String MODE_PAIEMENT_REQUIRED = "Mode de paiement requis";
     public static final String DATE_REQUIRED = "Date requise";
+    public static final String DATE_INVALID_OR_FUTURE = "La date de naissance ne peut pas être dans le futur";
 }
