@@ -20,7 +20,7 @@ import java.util.Map;
 @Service("sendTextSms")
 public class SendTextSmsService implements SmsService {
 
-    private static final String SMS_PATH = "/v1/messages";
+    private static final String SMS_PATH = "/send-sms";
 
     private final SendTextConfig sendTextConfig;
     private final RestTemplate restTemplate;
@@ -56,15 +56,11 @@ public class SendTextSmsService implements SmsService {
         }
 
         Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("api_key", sendTextConfig.getApiKey().trim());
         payload.put("to", toPhone);
         payload.put("message", message);
 
-        if (sendTextConfig.getFrom() != null && !sendTextConfig.getFrom().isBlank()) {
-            payload.put("from", sendTextConfig.getFrom().trim());
-        }
-
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(sendTextConfig.getApiKey().trim());
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         String endpoint = normalizeBaseUrl(sendTextConfig.getBaseUrl()) + SMS_PATH;
@@ -106,19 +102,19 @@ public class SendTextSmsService implements SmsService {
         String normalized = phone.trim().replace(" ", "").replace("-", "");
 
         if (normalized.startsWith("00")) {
-            normalized = "+" + normalized.substring(2);
+            normalized = normalized.substring(2);
         }
 
         if (normalized.startsWith("+")) {
-            return normalized;
+            return normalized.substring(1);
         }
 
         if (normalized.matches("\\d{9}")) {
-            return "+221" + normalized;
+            return "221" + normalized;
         }
 
         if (normalized.matches("221\\d{9}")) {
-            return "+" + normalized;
+            return normalized;
         }
 
         return normalized;
