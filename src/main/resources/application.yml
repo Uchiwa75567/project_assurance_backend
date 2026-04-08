@@ -78,7 +78,7 @@ app:
     api-key: ${SENDTEXT_API_KEY}
     api-secret: ${SENDTEXT_API_SECRET}
     from: ${SENDTEXT_FROM:}
-    base-url: ${SENDTEXT_BASE_URL:https://api.send-text.com}
+    base-url: ${SENDTEXT_BASE_URL:https://api.sendtext.sn}
     connect-timeout-ms: ${SENDTEXT_CONNECT_TIMEOUT_MS:10000}
     read-timeout-ms: ${SENDTEXT_READ_TIMEOUT_MS:10000}
   cloudinary:

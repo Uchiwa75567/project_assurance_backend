@@ -86,7 +86,7 @@ public class SendTextSmsService implements SmsService {
 
     private String normalizeBaseUrl(String baseUrl) {
         if (baseUrl == null || baseUrl.isBlank()) {
-            return "https://api.send-text.com";
+            return "https://api.sendtext.sn";
         }
         return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl.trim();
     }

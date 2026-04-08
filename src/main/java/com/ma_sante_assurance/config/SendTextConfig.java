@@ -18,7 +18,7 @@ public class SendTextConfig {
     @Value("${app.sendtext.from:}")
     private String from;
 
-    @Value("${app.sendtext.base-url:https://api.send-text.com}")
+    @Value("${app.sendtext.base-url:https://api.sendtext.sn}")
     private String baseUrl;
 
     @Value("${app.sendtext.connect-timeout-ms:10000}")
