@@ -1,57 +1,34 @@
 package com.ma_sante_assurance.config;
 
 import jakarta.annotation.PostConstruct;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConfigurationProperties(prefix = "sendtext.api")
+@Data
 @Slf4j
 public class SendTextConfig {
 
-    @Value("${app.sendtext.api-key:}")
-    private String apiKey;
-
-    @Value("${app.sendtext.from:}")
-    private String from;
-
-    @Value("${app.sendtext.base-url:https://api.sendtext.sn}")
-    private String baseUrl;
-
-    @Value("${app.sendtext.connect-timeout-ms:10000}")
-    private int connectTimeoutMs;
-
-    @Value("${app.sendtext.read-timeout-ms:10000}")
-    private int readTimeoutMs;
+    private String baseUrl = "https://api.sendtext.sn/v1";
+    private String key;
+    private String secret;
+    private String senderName;
+    private int connectTimeoutMs = 10000;
+    private int readTimeoutMs = 10000;
 
     @PostConstruct
     public void init() {
-        if (apiKey != null && !apiKey.isBlank()) {
+        if (key != null && !key.isBlank()) {
             log.info(
-                    "SendText initialisé avec timeout connect={}ms read={}ms",
+                    "SendText initialisé avec baseUrl={} senderName={} timeout connect={}ms read={}ms",
+                    baseUrl,
+                    senderName,
                     connectTimeoutMs,
                     readTimeoutMs
             );
         }
-    }
-
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    public String getFrom() {
-        return from;
-    }
-
-    public String getBaseUrl() {
-        return baseUrl;
-    }
-
-    public int getConnectTimeoutMs() {
-        return connectTimeoutMs;
-    }
-
-    public int getReadTimeoutMs() {
-        return readTimeoutMs;
     }
 }

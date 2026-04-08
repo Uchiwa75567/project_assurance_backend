@@ -75,11 +75,13 @@ app:
     ipn-url: ${PAYDUNYA_IPN_URL}
     mode: ${PAYDUNYA_MODE:test}
   sendtext:
-    api-key: ${SENDTEXT_API_KEY}
-    from: ${SENDTEXT_FROM:}
-    base-url: ${SENDTEXT_BASE_URL:https://api.sendtext.sn}
-    connect-timeout-ms: ${SENDTEXT_CONNECT_TIMEOUT_MS:10000}
-    read-timeout-ms: ${SENDTEXT_READ_TIMEOUT_MS:10000}
+    api:
+      base-url: ${SENDTEXT_BASE_URL:https://api.sendtext.sn/v1}
+      key: ${SENDTEXT_API_KEY:}
+      secret: ${SENDTEXT_API_SECRET:}
+      sender-name: ${SENDTEXT_SENDER_NAME:${SENDTEXT_FROM:}}
+      connect-timeout-ms: ${SENDTEXT_CONNECT_TIMEOUT_MS:10000}
+      read-timeout-ms: ${SENDTEXT_READ_TIMEOUT_MS:10000}
   cloudinary:
     cloud-name: ${CLOUDINARY_CLOUD_NAME}
     api-key: ${CLOUDINARY_API_KEY}
