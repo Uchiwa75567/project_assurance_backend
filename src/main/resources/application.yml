@@ -74,10 +74,13 @@ app:
     api-url: ${PAYDUNYA_API_URL:https://api.paydunya.com}
     ipn-url: ${PAYDUNYA_IPN_URL}
     mode: ${PAYDUNYA_MODE:test}
-  twilio:
-    account-sid: ${TWILIO_ACCOUNT_SID}
-    auth-token: ${TWILIO_AUTH_TOKEN}
-    from-phone: ${TWILIO_FROM_PHONE}
+  sendtext:
+    api-key: ${SENDTEXT_API_KEY}
+    api-secret: ${SENDTEXT_API_SECRET}
+    from: ${SENDTEXT_FROM:}
+    base-url: ${SENDTEXT_BASE_URL:https://api.send-text.com}
+    connect-timeout-ms: ${SENDTEXT_CONNECT_TIMEOUT_MS:10000}
+    read-timeout-ms: ${SENDTEXT_READ_TIMEOUT_MS:10000}
   cloudinary:
     cloud-name: ${CLOUDINARY_CLOUD_NAME}
     api-key: ${CLOUDINARY_API_KEY}

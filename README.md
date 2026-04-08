@@ -27,7 +27,7 @@ It handles:
 - JWT-based authentication
 - BCrypt password hashing
 - Mailjet for email
-- Twilio for SMS
+- SendText for SMS
 - Cloudinary for image upload
 - PayDunya for payment integration
 
@@ -180,7 +180,7 @@ Flyway is used to version and evolve the schema safely.
 - Used for OTP and card-related notifications.
 
 ### SMS
-- Twilio is used for SMS notifications.
+- SendText is used for SMS notifications.
 
 ### File upload
 - Cloudinary is used to store uploaded profile photos.
@@ -217,7 +217,7 @@ Important settings:
 - database host, port, name, username, password
 - JWT secret
 - Mailjet keys
-- Twilio keys
+- SendText keys
 
 For local development, `run.sh` loads `back_end/.env` automatically before starting Spring Boot.
 - PayDunya keys
