@@ -20,7 +20,7 @@ import java.util.Map;
 @Service("sendTextSms")
 public class SendTextSmsService implements SmsService {
 
-    private static final String MESSAGES_PATH = "/v1/messages";
+    private static final String SMS_PATH = "/v1/sms";
 
     private final SendTextConfig sendTextConfig;
     private final RestTemplate restTemplate;
@@ -67,7 +67,7 @@ public class SendTextSmsService implements SmsService {
         headers.setBearerAuth(sendTextConfig.getApiKey().trim());
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String endpoint = normalizeBaseUrl(sendTextConfig.getBaseUrl()) + MESSAGES_PATH;
+        String endpoint = normalizeBaseUrl(sendTextConfig.getBaseUrl()) + SMS_PATH;
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
 
         try {
