@@ -15,13 +15,12 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Locale;
 
 @Slf4j
 @Service("sendTextSms")
 public class SendTextSmsService implements SmsService {
 
-    private static final String SMS_PATH = "/send-sms";
+    private static final String SMS_PATH = "/v1/messages";
 
     private final SendTextConfig sendTextConfig;
     private final RestTemplate restTemplate;
@@ -60,9 +59,13 @@ public class SendTextSmsService implements SmsService {
         payload.put("to", toPhone);
         payload.put("message", message);
 
+        if (sendTextConfig.getFrom() != null && !sendTextConfig.getFrom().isBlank()) {
+            payload.put("from", sendTextConfig.getFrom().trim());
+        }
+
         HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(sendTextConfig.getApiKey().trim());
         headers.setContentType(MediaType.APPLICATION_JSON);
-        applyAuthentication(headers, payload);
 
         String endpoint = normalizeBaseUrl(sendTextConfig.getBaseUrl()) + SMS_PATH;
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
@@ -81,54 +84,11 @@ public class SendTextSmsService implements SmsService {
         }
     }
 
-    private void applyAuthentication(HttpHeaders headers, Map<String, Object> payload) {
-        String apiKey = sendTextConfig.getApiKey() == null ? "" : sendTextConfig.getApiKey().trim();
-        String apiSecret = sendTextConfig.getApiSecret() == null ? "" : sendTextConfig.getApiSecret().trim();
-        String authMode = normalizeAuthMode(sendTextConfig.getAuthMode());
-
-        if (apiKey.isBlank()) {
-            throw new IllegalStateException(
-                    "SendText n'est pas configure. Verifie SENDTEXT_API_KEY dans deploy.env."
-            );
-        }
-
-        if ("body".equals(authMode)) {
-            payload.put("api_key", apiKey);
-            return;
-        }
-
-        if ("bearer".equals(authMode)) {
-            headers.setBearerAuth(apiKey);
-            return;
-        }
-
-        if ("basic".equals(authMode)) {
-            if (apiSecret.isBlank()) {
-                throw new IllegalStateException(
-                        "SENDTEXT_AUTH_MODE=basic requiert SENDTEXT_API_SECRET dans deploy.env."
-                );
-            }
-            headers.setBasicAuth(apiKey, apiSecret);
-            return;
-        }
-
-        throw new IllegalStateException(
-                "Mode d'authentification SendText inconnu: " + authMode + ". Valeurs attendues: basic ou bearer."
-        );
-    }
-
     private String normalizeBaseUrl(String baseUrl) {
         if (baseUrl == null || baseUrl.isBlank()) {
             return "https://api.sendtext.sn";
         }
         return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl.trim();
-    }
-
-    private String normalizeAuthMode(String authMode) {
-        if (authMode == null || authMode.isBlank()) {
-            return "basic";
-        }
-        return authMode.trim().toLowerCase(Locale.ROOT);
     }
 
     private RestTemplate buildRestTemplate(int connectTimeoutMs, int readTimeoutMs) {
@@ -146,18 +106,19 @@ public class SendTextSmsService implements SmsService {
         String normalized = phone.trim().replace(" ", "").replace("-", "");
 
         if (normalized.startsWith("00")) {
-            normalized = normalized.substring(2);
+            normalized = "+" + normalized.substring(2);
         }
 
         if (normalized.startsWith("+")) {
-            normalized = normalized.substring(1);
+            return normalized;
         }
 
-        if (!normalized.startsWith("221")) {
-            // Default to Senegal international format for local numbers like 771234567.
-            if (normalized.matches("\\d{9}")) {
-                normalized = "221" + normalized;
-            }
+        if (normalized.matches("\\d{9}")) {
+            return "+221" + normalized;
+        }
+
+        if (normalized.matches("221\\d{9}")) {
+            return "+" + normalized;
         }
 
         return normalized;

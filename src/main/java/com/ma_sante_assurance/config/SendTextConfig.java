@@ -12,12 +12,6 @@ public class SendTextConfig {
     @Value("${app.sendtext.api-key:}")
     private String apiKey;
 
-    @Value("${app.sendtext.api-secret:}")
-    private String apiSecret;
-
-    @Value("${app.sendtext.auth-mode:basic}")
-    private String authMode;
-
     @Value("${app.sendtext.from:}")
     private String from;
 
@@ -34,8 +28,7 @@ public class SendTextConfig {
     public void init() {
         if (apiKey != null && !apiKey.isBlank()) {
             log.info(
-                    "SendText initialisé avec authMode={} timeouts connect={}ms read={}ms",
-                    authMode,
+                    "SendText initialisé avec timeout connect={}ms read={}ms",
                     connectTimeoutMs,
                     readTimeoutMs
             );
@@ -44,14 +37,6 @@ public class SendTextConfig {
 
     public String getApiKey() {
         return apiKey;
-    }
-
-    public String getApiSecret() {
-        return apiSecret;
-    }
-
-    public String getAuthMode() {
-        return authMode;
     }
 
     public String getFrom() {
