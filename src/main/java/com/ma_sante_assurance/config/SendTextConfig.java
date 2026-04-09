@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "sendtext.api")
+@ConfigurationProperties(prefix = "app.sendtext.api")
 @Data
 @Slf4j
 public class SendTextConfig {
